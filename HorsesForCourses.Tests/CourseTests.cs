@@ -1,4 +1,6 @@
-namespace HorsesForCourses.Tests;
+using HorsesForCourses.Core;
+using Xunit;
+
 public class CourseTests
 {
     [Fact]
@@ -19,7 +21,8 @@ public class CourseTests
         course.AddTimeslot(new Timeslot(Weekday.Monday, new TimeOnly(9, 0), new TimeOnly(11, 0)));
         course.Confirm();
 
-        Assert.Throws<InvalidOperationException>(() => course.AddTimeslot(new Timeslot(Weekday.Tuesday, new TimeOnly(9, 0), new TimeOnly(11, 0)))
+        Assert.Throws<InvalidOperationException>(() =>
+            course.AddTimeslot(new Timeslot(Weekday.Tuesday, new TimeOnly(9, 0), new TimeOnly(11, 0)))
         );
     }
 
@@ -74,7 +77,6 @@ public class CourseTests
     public void AssignCoach_Should_Throw_When_Not_Confirmed()
     {
         var coach = new Coach("Milad Eshaghzey", "eshaghzey_milad@hotmail.com");
-
         var course = new Course("C# Basics", DateOnly.FromDateTime(DateTime.Today), DateOnly.FromDateTime(DateTime.Today.AddDays(1)));
 
         Assert.Throws<InvalidOperationException>(() => course.AssignCoach(coach));

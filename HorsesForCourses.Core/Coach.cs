@@ -1,5 +1,9 @@
+namespace HorsesForCourses.Core;
+
 public class Coach
 {
+    public Guid Id { get; } = Guid.NewGuid();
+
     private readonly List<string> _competences = new();
     private readonly List<Timeslot> _availabilities = new();
     private readonly List<Guid> _assignedCourseIds = new();
@@ -25,10 +29,8 @@ public class Coach
 
     public void AddCompetence(string competence)
     {
-        if (_competences.Contains(competence))
-            return;
-
-        _competences.Add(competence);
+        if (!_competences.Contains(competence))
+            _competences.Add(competence);
     }
 
     public void RemoveCompetence(string competence)
@@ -38,16 +40,14 @@ public class Coach
 
     public void AddAvailability(Timeslot slot)
     {
-        if (_availabilities.Contains(slot))
-            return;
-
-        _availabilities.Add(slot);
+        if (!_availabilities.Contains(slot))
+            _availabilities.Add(slot);
     }
 
     public bool CanTeach(Course course)
     {
         var missingCompetences = course.RequiredCompetences
-            .Where(rc => _competences.Contains(rc) == false)
+            .Where(rc => !_competences.Contains(rc))
             .ToList();
 
         if (missingCompetences.Any())
@@ -55,28 +55,13 @@ public class Coach
 
         foreach (var courseSlot in course.Timeslots)
         {
-            bool isAvailable = false;
+            bool isAvailable = _availabilities.Any(a =>
+                a.Day == courseSlot.Day &&
+                a.Start <= courseSlot.Start &&
+                a.End >= courseSlot.End
+            );
 
-            foreach (var a in _availabilities)
-            {
-                bool sameDay = a.Day == courseSlot.Day;
-                bool startsOnTime = a.Start <= courseSlot.Start;
-                bool endsOnTime = a.End >= courseSlot.End;
-
-                if (sameDay)
-                {
-                    if (startsOnTime)
-                    {
-                        if (endsOnTime)
-                        {
-                            isAvailable = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (isAvailable == false)
+            if (!isAvailable)
                 return false;
         }
 
@@ -85,15 +70,12 @@ public class Coach
 
     public void AssignCourse(Course course)
     {
-        if (CanTeach(course))
-        {
-            if (_assignedCourseIds.Contains(course.Id))
-                return;
+        if (!CanTeach(course))
+            throw new InvalidOperationException("Coach is not eligible for this course");
 
-            _assignedCourseIds.Add(course.Id);
+        if (_assignedCourseIds.Contains(course.Id))
             return;
-        }
 
-        throw new InvalidOperationException("Coach is not eligible for this course");
+        _assignedCourseIds.Add(course.Id);
     }
 }

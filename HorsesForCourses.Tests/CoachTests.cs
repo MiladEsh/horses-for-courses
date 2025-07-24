@@ -1,4 +1,4 @@
-namespace HorsesForCourses.Tests;
+using HorsesForCourses.Core;
 public class CoachTests
 {
     [Fact]

@@ -1,3 +1,5 @@
+namespace HorsesForCourses.Core;
+
 public class Course
 {
     private readonly List<Timeslot> _timeslots = new();
@@ -74,7 +76,7 @@ public class Course
 
             foreach (var ts in _timeslots)
             {
-                totalMinutes = totalMinutes + ts.Duration.TotalMinutes;
+                totalMinutes += ts.Duration.TotalMinutes;
             }
 
             if (totalMinutes >= 60)
