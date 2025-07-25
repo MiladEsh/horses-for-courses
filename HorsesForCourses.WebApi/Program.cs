@@ -11,6 +11,8 @@ builder.Services.AddSingleton<InMemoryCoachRepository>();
 
 builder.Services.AddControllers();
 
+builder.Services.AddSingleton<InMemoryCourseRepository>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

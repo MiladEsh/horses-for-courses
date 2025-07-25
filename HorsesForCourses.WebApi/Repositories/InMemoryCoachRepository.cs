@@ -20,20 +20,12 @@ public class InMemoryCoachRepository
     {
         return _coaches.Values.ToList();
     }
+
     public void UpdateSkills(Guid id, List<string> skills)
     {
         if (_coaches.TryGetValue(id, out var coach))
         {
-            var currentSkills = coach.Competences.ToList();
-            foreach (var s in currentSkills)
-            {
-                coach.RemoveCompetence(s);
-            }
-
-            foreach (var skill in skills.Distinct())
-            {
-                coach.AddCompetence(skill);
-            }
+            coach.ReplaceCompetences(skills);
         }
     }
 }

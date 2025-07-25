@@ -78,4 +78,16 @@ public class Coach
 
         _assignedCourseIds.Add(course.Id);
     }
+    public void ReplaceCompetences(List<string> newCompetences)
+    {
+        var currentSkills = _competences.ToList();
+        foreach (var s in currentSkills)
+        {
+            _competences.Remove(s);
+        }
+        foreach (var skill in newCompetences.Distinct())
+        {
+            AddCompetence(skill);
+        }
+    }
 }

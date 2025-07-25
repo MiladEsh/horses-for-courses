@@ -108,4 +108,16 @@ public class Course
 
         throw new InvalidOperationException("Course must be confirmed before assigning coach");
     }
+    public void ReplaceRequiredCompetences(List<string> newCompetences)
+    {
+        if (Status == CourseStatus.Confirmed)
+            throw new InvalidOperationException("Cannot change competences after confirmation");
+
+        _requiredCompetences.Clear();
+
+        foreach (var competence in newCompetences.Distinct())
+        {
+            _requiredCompetences.Add(competence);
+        }
+    }
 }
