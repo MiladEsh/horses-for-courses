@@ -20,7 +20,6 @@ public class InMemoryCoachRepository
     {
         return _coaches.Values.ToList();
     }
-
     public void UpdateSkills(Guid id, List<string> skills)
     {
         if (_coaches.TryGetValue(id, out var coach))
