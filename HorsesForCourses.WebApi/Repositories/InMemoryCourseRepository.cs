@@ -44,4 +44,12 @@ public class InMemoryCourseRepository
             course.Confirm();
         }
     }
+
+    public void AssignCoach(Guid courseId, Coach coach)
+    {
+        if (_courses.TryGetValue(courseId, out var course))
+        {
+            course.AssignCoach(coach);
+        }
+    }
 }

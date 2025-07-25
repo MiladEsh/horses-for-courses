@@ -3,7 +3,6 @@ using HorsesForCourses.WebApi.Dtos;
 using HorsesForCourses.WebApi.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
-
 namespace HorsesForCourses.WebApi.Controllers;
 
 [ApiController]
@@ -49,6 +48,25 @@ public class CoachController : ControllerBase
 
         _repository.UpdateSkills(id, dto.Skills);
         return Ok(ToDto(coach));
+    }
+
+    [HttpPost("{id}/availability")]
+    public IActionResult AddAvailability(Guid id, [FromBody] TimeslotDto dto)
+    {
+        var coach = _repository.GetById(id);
+        if (coach is null)
+            return NotFound();
+
+        try
+        {
+            var slot = new Timeslot(dto.Day, dto.Start, dto.End);
+            coach.AddAvailability(slot);
+            return Ok(ToDto(coach));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     private static CoachDto ToDto(Coach coach)

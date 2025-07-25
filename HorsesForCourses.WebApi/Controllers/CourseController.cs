@@ -10,10 +10,12 @@ namespace HorsesForCourses.WebApi.Controllers;
 public class CourseController : ControllerBase
 {
     private readonly InMemoryCourseRepository _repository;
+    private readonly InMemoryCoachRepository _coachRepository;
 
-    public CourseController(InMemoryCourseRepository repository)
+    public CourseController(InMemoryCourseRepository repository, InMemoryCoachRepository coachRepository)
     {
         _repository = repository;
+        _coachRepository = coachRepository;
     }
 
     [HttpPost]
@@ -21,7 +23,6 @@ public class CourseController : ControllerBase
     {
         var course = new Course(dto.Name, dto.StartDate, dto.EndDate);
         _repository.Add(course);
-
         return CreatedAtAction(nameof(GetById), new { id = course.Id }, course);
     }
 
@@ -37,6 +38,7 @@ public class CourseController : ControllerBase
     {
         return Ok(_repository.GetAll());
     }
+
     [HttpPost("{id}/confirm")]
     public IActionResult ConfirmCourse(Guid id)
     {
@@ -54,6 +56,7 @@ public class CourseController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
     [HttpPost("{id}/timeslots")]
     public IActionResult AddTimeslot(Guid id, [FromBody] TimeslotDto dto)
     {
@@ -65,6 +68,39 @@ public class CourseController : ControllerBase
         {
             var timeslot = new Timeslot(dto.Day, dto.Start, dto.End);
             _repository.AddTimeslot(id, timeslot);
+            return Ok(course);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{id}/skills")]
+    public IActionResult UpdateSkills(Guid id, [FromBody] UpdateCourseSkillsDto dto)
+    {
+        var course = _repository.GetById(id);
+        if (course is null)
+            return NotFound();
+
+        _repository.UpdateSkills(id, dto.Skills);
+        return Ok(course);
+    }
+
+    [HttpPost("{id}/assign-coach")]
+    public IActionResult AssignCoach(Guid id, [FromBody] AssignCoachDto dto)
+    {
+        var course = _repository.GetById(id);
+        if (course is null)
+            return NotFound(new { message = "Course not found" });
+
+        var coach = _coachRepository.GetById(dto.CoachId);
+        if (coach is null)
+            return NotFound(new { message = "Coach not found" });
+
+        try
+        {
+            _repository.AssignCoach(id, coach);
             return Ok(course);
         }
         catch (InvalidOperationException ex)

@@ -4,12 +4,12 @@ using HorsesForCourses.Core;
 
 public class CourseApiTests
 {
-    private static readonly CustomWebAppFactory _factory = new(); 
+    private static readonly CustomWebAppFactory _factory = new();
     private readonly HttpClient _client;
 
     public CourseApiTests()
     {
-        _client = _factory.CreateClient(); 
+        _client = _factory.CreateClient();
     }
 
     [Fact]
@@ -67,6 +67,73 @@ public class CourseApiTests
         Assert.Equal(CourseStatus.PendingForCoach, confirmedCourse!.Status);
     }
 
+    [Fact]
+    public async Task Should_Assign_Coach_When_Eligible()
+    {
+        var newCoach = new
+        {
+            name = "John Doe",
+            email = "john.doe@example.com"
+        };
+
+        var coachResponse = await _client.PostAsJsonAsync("/coaches", newCoach);
+        Assert.Equal(HttpStatusCode.Created, coachResponse.StatusCode);
+
+        var createdCoach = await coachResponse.Content.ReadFromJsonAsync<CoachResponse>();
+        Assert.NotNull(createdCoach);
+
+        var newCourse = new
+        {
+            name = "C# Advanced",
+            startDate = DateOnly.FromDateTime(DateTime.Today),
+            endDate = DateOnly.FromDateTime(DateTime.Today.AddDays(2))
+        };
+
+        var courseResponse = await _client.PostAsJsonAsync("/courses", newCourse);
+        Assert.Equal(HttpStatusCode.Created, courseResponse.StatusCode);
+
+        var createdCourse = await courseResponse.Content.ReadFromJsonAsync<CourseResponse>();
+        Assert.NotNull(createdCourse);
+
+        var timeslot = new
+        {
+            day = Weekday.Monday,
+            start = new TimeOnly(9, 0),
+            end = new TimeOnly(10, 30)
+        };
+
+        var tsResponse = await _client.PostAsJsonAsync($"/courses/{createdCourse!.Id}/timeslots", timeslot);
+        Assert.Equal(HttpStatusCode.OK, tsResponse.StatusCode);
+
+        var updateSkills = new { skills = new List<string> { "C#" } };
+        var skillsResponse = await _client.PostAsJsonAsync($"/courses/{createdCourse.Id}/skills", updateSkills);
+        Assert.Equal(HttpStatusCode.OK, skillsResponse.StatusCode);
+
+        var coachSkills = new { skills = new List<string> { "C#" } };
+        var coachSkillsResponse = await _client.PostAsJsonAsync($"/coaches/{createdCoach!.Id}/skills", coachSkills);
+        Assert.Equal(HttpStatusCode.OK, coachSkillsResponse.StatusCode);
+
+        var availability = new
+        {
+            day = Weekday.Monday,
+            start = new TimeOnly(9, 0),
+            end = new TimeOnly(10, 30)
+        };
+        var availabilityResponse = await _client.PostAsJsonAsync($"/coaches/{createdCoach.Id}/availability", availability);
+        Assert.Equal(HttpStatusCode.OK, availabilityResponse.StatusCode);
+
+        var confirmResponse = await _client.PostAsync($"/courses/{createdCourse.Id}/confirm", null);
+        Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
+
+        var assignCoach = new { coachId = createdCoach.Id };
+        var assignResponse = await _client.PostAsJsonAsync($"/courses/{createdCourse.Id}/assign-coach", assignCoach);
+        Assert.Equal(HttpStatusCode.OK, assignResponse.StatusCode);
+
+        var assignedCourse = await assignResponse.Content.ReadFromJsonAsync<CourseResponse>();
+        Assert.NotNull(assignedCourse);
+        Assert.Equal(CourseStatus.Confirmed, assignedCourse!.Status);
+    }
+
     private class CourseResponse
     {
         public Guid Id { get; set; }
@@ -83,5 +150,13 @@ public class CourseApiTests
         public Weekday Day { get; set; }
         public TimeOnly Start { get; set; }
         public TimeOnly End { get; set; }
+    }
+
+    private class CoachResponse
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = default!;
+        public string Email { get; set; } = default!;
+        public List<string> Competences { get; set; } = new();
     }
 }
