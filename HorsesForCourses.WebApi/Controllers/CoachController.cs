@@ -47,7 +47,9 @@ public class CoachController : ControllerBase
             return NotFound();
 
         _repository.UpdateSkills(id, dto.Skills);
-        return Ok(ToDto(coach));
+
+        var updatedCoach = _repository.GetById(id);
+        return Ok(ToDto(updatedCoach!));
     }
 
     [HttpPost("{id}/availability")]

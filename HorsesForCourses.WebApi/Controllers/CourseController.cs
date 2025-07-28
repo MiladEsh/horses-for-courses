@@ -67,7 +67,7 @@ public class CourseController : ControllerBase
         try
         {
             var timeslot = new Timeslot(dto.Day, dto.Start, dto.End);
-            _repository.AddTimeslot(id, timeslot);
+            course.AddTimeslot(timeslot);
             return Ok(course);
         }
         catch (InvalidOperationException ex)

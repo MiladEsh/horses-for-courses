@@ -28,15 +28,6 @@ public class InMemoryCourseRepository
             course.ReplaceRequiredCompetences(skills);
         }
     }
-
-    public void AddTimeslot(Guid id, Timeslot slot)
-    {
-        if (_courses.TryGetValue(id, out var course))
-        {
-            course.AddTimeslot(slot);
-        }
-    }
-
     public void Confirm(Guid id)
     {
         if (_courses.TryGetValue(id, out var course))
