@@ -2,16 +2,14 @@ using HorsesForCourses.WebApi.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Repository
 builder.Services.AddSingleton<InMemoryCoachRepository>();
+builder.Services.AddSingleton<InMemoryCourseRepository>();
+builder.Services.AddSingleton<InMemorySessionRepository>();
 
 builder.Services.AddControllers();
-
-builder.Services.AddSingleton<InMemoryCourseRepository>();
 
 var app = builder.Build();
 

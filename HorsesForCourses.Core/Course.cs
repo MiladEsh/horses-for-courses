@@ -95,19 +95,21 @@ public class Course
     {
         if (Status == CourseStatus.PendingForCoach)
         {
-            if (coach.CanTeach(this))
-            {
-                AssignedCoach = coach;
-                Status = CourseStatus.Confirmed;
-                coach.AssignCourse(this);
-                return;
-            }
+            if (!RequiredCompetences.All(skill => coach.Competences.Contains(skill)))
+                throw new InvalidOperationException("Coach does not have all required competences");
 
-            throw new InvalidOperationException("Coach is not eligible for this course");
+            if (!coach.IsAvailable(this))
+                throw new InvalidOperationException("Coach is not available for all timeslots");
+
+            AssignedCoach = coach;
+            Status = CourseStatus.Confirmed;
+            coach.AssignCourse(this);
+            return;
         }
 
         throw new InvalidOperationException("Course must be confirmed before assigning coach");
     }
+
     public void ReplaceRequiredCompetences(List<string> newCompetences)
     {
         if (Status == CourseStatus.Confirmed)

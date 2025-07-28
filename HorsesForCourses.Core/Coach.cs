@@ -2,17 +2,15 @@ namespace HorsesForCourses.Core;
 
 public class Coach
 {
-    public Guid Id { get; } = Guid.NewGuid();
-
+    private readonly List<Timeslot> _availability = new();
     private readonly List<string> _competences = new();
-    private readonly List<Timeslot> _availabilities = new();
     private readonly List<Guid> _assignedCourseIds = new();
 
+    public Guid Id { get; } = Guid.NewGuid();
     public string Name { get; }
     public string Email { get; }
-
+    public IReadOnlyList<Timeslot> Availability => _availability.AsReadOnly();
     public IReadOnlyList<string> Competences => _competences.AsReadOnly();
-    public IReadOnlyList<Timeslot> Availabilities => _availabilities.AsReadOnly();
     public IReadOnlyList<Guid> AssignedCourseIds => _assignedCourseIds.AsReadOnly();
 
     public Coach(string name, string email)
@@ -27,67 +25,49 @@ public class Coach
         Email = email;
     }
 
+    public void AddAvailability(Timeslot timeslot)
+    {
+        _availability.Add(timeslot);
+    }
+
     public void AddCompetence(string competence)
     {
         if (!_competences.Contains(competence))
             _competences.Add(competence);
     }
 
-    public void RemoveCompetence(string competence)
+    public void ReplaceCompetences(List<string> competences)
     {
-        _competences.Remove(competence);
-    }
+        _competences.Clear();
 
-    public void AddAvailability(Timeslot slot)
-    {
-        if (!_availabilities.Contains(slot))
-            _availabilities.Add(slot);
+        foreach (var comp in competences.Distinct())
+        {
+            _competences.Add(comp);
+        }
     }
 
     public bool CanTeach(Course course)
     {
-        var missingCompetences = course.RequiredCompetences
-            .Where(rc => !_competences.Contains(rc))
-            .ToList();
-
-        if (missingCompetences.Any())
-            return false;
-
-        foreach (var courseSlot in course.Timeslots)
-        {
-            bool isAvailable = _availabilities.Any(a =>
-                a.Day == courseSlot.Day &&
-                a.Start <= courseSlot.Start &&
-                a.End >= courseSlot.End
-            );
-
-            if (!isAvailable)
-                return false;
-        }
-
-        return true;
+        var allSkillsMatch = course.RequiredCompetences.All(c => _competences.Contains(c));
+        var allSlotsMatch = course.Timeslots.All(courseSlot =>
+            _availability.Any(av => av.Day == courseSlot.Day &&
+                                    av.Start <= courseSlot.Start &&
+                                    av.End >= courseSlot.End));
+        return allSkillsMatch && allSlotsMatch;
     }
 
     public void AssignCourse(Course course)
     {
         if (!CanTeach(course))
-            throw new InvalidOperationException("Coach is not eligible for this course");
+            throw new InvalidOperationException("Coach is not eligible to teach this course");
 
-        if (_assignedCourseIds.Contains(course.Id))
-            return;
-
-        _assignedCourseIds.Add(course.Id);
+        if (!_assignedCourseIds.Contains(course.Id))
+            _assignedCourseIds.Add(course.Id);
     }
-    public void ReplaceCompetences(List<string> newCompetences)
+
+    public bool IsAvailable(Course course)
     {
-        var currentSkills = _competences.ToList();
-        foreach (var s in currentSkills)
-        {
-            _competences.Remove(s);
-        }
-        foreach (var skill in newCompetences.Distinct())
-        {
-            AddCompetence(skill);
-        }
+        return course.Timeslots.All(courseSlot =>
+            _availability.Any(coachSlot => coachSlot.OverlapsWith(courseSlot)));
     }
 }

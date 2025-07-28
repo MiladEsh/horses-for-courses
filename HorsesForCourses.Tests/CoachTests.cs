@@ -30,7 +30,7 @@ public class CoachTests
 
         coach.AddAvailability(slot);
 
-        Assert.Contains(slot, coach.Availabilities);
+        Assert.Contains(slot, coach.Availability);
     }
 
     [Fact]

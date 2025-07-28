@@ -159,4 +159,70 @@ public class CourseApiTests
         public string Email { get; set; } = default!;
         public List<string> Competences { get; set; } = new();
     }
+    [Fact]
+    public async Task CoachCanAssignSelfToEligibleCourse()
+    {
+        var coach = new { name = "Milad", email = "milad@example.com" };
+        var coachResp = await _client.PostAsJsonAsync("/coaches", coach);
+        var createdCoach = await coachResp.Content.ReadFromJsonAsync<CoachResponse>();
+
+        var course = new
+        {
+            name = "C# OOP",
+            startDate = DateOnly.FromDateTime(DateTime.Today),
+            endDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1))
+        };
+        var courseResp = await _client.PostAsJsonAsync("/courses", course);
+        var createdCourse = await courseResp.Content.ReadFromJsonAsync<CourseResponse>();
+
+        var timeslot = new { day = Weekday.Tuesday, start = new TimeOnly(9, 0), end = new TimeOnly(12, 0) };
+        await _client.PostAsJsonAsync($"/courses/{createdCourse!.Id}/timeslots", timeslot);
+
+        var courseSkills = new { skills = new List<string> { "C#" } };
+        await _client.PostAsJsonAsync($"/courses/{createdCourse.Id}/skills", courseSkills);
+
+        var coachSkills = new { skills = new List<string> { "C#" } };
+        await _client.PostAsJsonAsync($"/coaches/{createdCoach!.Id}/skills", coachSkills);
+
+        var availability = new { day = Weekday.Tuesday, start = new TimeOnly(9, 0), end = new TimeOnly(12, 0) };
+        await _client.PostAsJsonAsync($"/coaches/{createdCoach.Id}/availability", availability);
+
+        await _client.PostAsync($"/courses/{createdCourse.Id}/confirm", null);
+
+        var assignDto = new { courseId = createdCourse.Id };
+        var assignResp = await _client.PostAsJsonAsync($"/coaches/{createdCoach.Id}/assign", assignDto);
+
+        Assert.Equal(HttpStatusCode.OK, assignResp.StatusCode);
+        var assignedCourse = await assignResp.Content.ReadFromJsonAsync<CourseResponse>();
+        Assert.Equal(CourseStatus.Confirmed, assignedCourse!.Status);
+    }
+    [Fact]
+    public async Task CoachCannotAssignSelfToIneligibleCourse()
+    {
+        var coach = new { name = "Inelegible Coach", email = "inelegible@example.com" };
+        var coachResp = await _client.PostAsJsonAsync("/coaches", coach);
+        var createdCoach = await coachResp.Content.ReadFromJsonAsync<CoachResponse>();
+
+        var course = new
+        {
+            name = "Java Fundamentals",
+            startDate = DateOnly.FromDateTime(DateTime.Today),
+            endDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1))
+        };
+        var courseResp = await _client.PostAsJsonAsync("/courses", course);
+        var createdCourse = await courseResp.Content.ReadFromJsonAsync<CourseResponse>();
+
+        var timeslot = new { day = Weekday.Wednesday, start = new TimeOnly(14, 0), end = new TimeOnly(16, 0) };
+        await _client.PostAsJsonAsync($"/courses/{createdCourse!.Id}/timeslots", timeslot);
+
+        var courseSkills = new { skills = new List<string> { "Java" } };
+        await _client.PostAsJsonAsync($"/courses/{createdCourse.Id}/skills", courseSkills);
+
+        await _client.PostAsync($"/courses/{createdCourse.Id}/confirm", null);
+
+        var assignDto = new { courseId = createdCourse.Id };
+        var assignResp = await _client.PostAsJsonAsync($"/coaches/{createdCoach!.Id}/assign", assignDto);
+
+        Assert.Equal(HttpStatusCode.BadRequest, assignResp.StatusCode);
+    }
 }

@@ -1,3 +1,5 @@
+namespace HorsesForCourses.Core;
+
 public class Timeslot
 {
     public Weekday Day { get; }
@@ -18,6 +20,14 @@ public class Timeslot
         Day = day;
         Start = start;
         End = end;
+    }
+
+    public bool OverlapsWith(Timeslot other)
+    {
+        if (Day != other.Day)
+            return false;
+
+        return Start < other.End && other.Start < End;
     }
 
     public TimeSpan Duration => End - Start;
