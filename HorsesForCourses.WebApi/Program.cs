@@ -1,9 +1,14 @@
 using HorsesForCourses.WebApi.Repositories;
+using HorsesForCourses.WebApi.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite("Data Source=horses.db"));
 
 builder.Services.AddSingleton<InMemoryCoachRepository>();
 builder.Services.AddSingleton<InMemoryCourseRepository>();
@@ -25,4 +30,4 @@ app.MapControllers();
 
 app.Run();
 
-public partial class Program { } // ✅ belangrijk voor integratietests
+public partial class Program { }

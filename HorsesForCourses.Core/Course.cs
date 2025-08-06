@@ -5,14 +5,16 @@ public class Course
     private readonly List<Timeslot> _timeslots = new();
     private readonly List<string> _requiredCompetences = new();
 
-    public Guid Id { get; } = Guid.NewGuid();
-    public string Name { get; }
-    public DateOnly StartDate { get; }
-    public DateOnly EndDate { get; }
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public string Name { get; private set; } = string.Empty;
+    public DateOnly StartDate { get; private set; }
+    public DateOnly EndDate { get; private set; }
     public CourseStatus Status { get; private set; } = CourseStatus.PendingForTimeslots;
     public IReadOnlyList<Timeslot> Timeslots => _timeslots.AsReadOnly();
     public IReadOnlyList<string> RequiredCompetences => _requiredCompetences.AsReadOnly();
     public Coach? AssignedCoach { get; private set; }
+
+    private Course() { }
 
     public Course(string name, DateOnly startDate, DateOnly endDate)
     {
