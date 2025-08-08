@@ -48,7 +48,7 @@ public class CourseController : ControllerBase
 
         try
         {
-            _repository.Confirm(id);
+            course.Confirm();
             return Ok(course);
         }
         catch (InvalidOperationException ex)
@@ -83,7 +83,7 @@ public class CourseController : ControllerBase
         if (course is null)
             return NotFound();
 
-        _repository.UpdateSkills(id, dto.Skills);
+        course.ReplaceRequiredCompetences(dto.Skills);
         return Ok(course);
     }
 
@@ -100,7 +100,8 @@ public class CourseController : ControllerBase
 
         try
         {
-            _repository.AssignCoach(id, coach);
+            course.AssignCoach(coach);
+            coach.AssignCourse(course);
             return Ok(course);
         }
         catch (InvalidOperationException ex)

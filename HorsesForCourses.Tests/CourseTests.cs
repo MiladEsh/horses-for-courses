@@ -1,5 +1,4 @@
 using HorsesForCourses.Core;
-using Xunit;
 
 public class CourseTests
 {

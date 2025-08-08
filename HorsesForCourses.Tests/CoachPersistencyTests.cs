@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using HorsesForCourses.Core;
 using HorsesForCourses.WebApi.Data;
 using Microsoft.Data.Sqlite;

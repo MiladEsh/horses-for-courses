@@ -1,5 +1,3 @@
-using HorsesForCourses.Core;
-
 namespace HorsesForCourses.WebApi.Dtos;
 
 public class TimeslotDto

@@ -1,31 +1,24 @@
 using HorsesForCourses.Core;
 
-namespace HorsesForCourses.WebApi.Repositories;
-
-public class InMemoryCoachRepository
+namespace HorsesForCourses.WebApi.Repositories
 {
-    private readonly Dictionary<Guid, Coach> _coaches = new();
-
-    public void Add(Coach coach)
+    public class InMemoryCoachRepository
     {
-        _coaches[coach.Id] = coach;
-    }
+        private readonly List<Coach> _coaches = new();
 
-    public Coach? GetById(Guid id)
-    {
-        return _coaches.TryGetValue(id, out var coach) ? coach : null;
-    }
-
-    public List<Coach> GetAll()
-    {
-        return _coaches.Values.ToList();
-    }
-
-    public void UpdateSkills(Guid id, List<string> skills)
-    {
-        if (_coaches.TryGetValue(id, out var coach))
+        public void Add(Coach coach)
         {
-            coach.ReplaceCompetences(skills);
+            _coaches.Add(coach);
+        }
+
+        public Coach? GetById(Guid id)
+        {
+            return _coaches.FirstOrDefault(c => c.Id == id);
+        }
+
+        public List<Coach> GetAll()
+        {
+            return _coaches;
         }
     }
 }

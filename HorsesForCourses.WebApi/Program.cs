@@ -1,5 +1,5 @@
-using HorsesForCourses.WebApi.Repositories;
 using HorsesForCourses.WebApi.Data;
+using HorsesForCourses.WebApi.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,7 +12,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddSingleton<InMemoryCoachRepository>();
 builder.Services.AddSingleton<InMemoryCourseRepository>();
-builder.Services.AddSingleton<InMemorySessionRepository>();
 
 builder.Services.AddControllers();
 
@@ -26,8 +25,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
-app.MapControllers();
 
+app.MapControllers();
 app.Run();
 
 public partial class Program { }

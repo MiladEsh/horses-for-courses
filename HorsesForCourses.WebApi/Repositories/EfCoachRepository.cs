@@ -2,7 +2,7 @@ using HorsesForCourses.Core;
 using HorsesForCourses.WebApi.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace HorsesForCourses.WebApi.Repositories.Ef
+namespace HorsesForCourses.WebApi.Repositories
 {
     public class EfCoachRepository
     {
@@ -15,7 +15,8 @@ namespace HorsesForCourses.WebApi.Repositories.Ef
 
         public async Task AddAsync(Coach coach)
         {
-            await _context.Coaches.AddAsync(coach);
+            _context.Coaches.Add(coach);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<Coach?> GetByIdAsync(Guid id)
@@ -26,15 +27,6 @@ namespace HorsesForCourses.WebApi.Repositories.Ef
         public async Task<List<Coach>> GetAllAsync()
         {
             return await _context.Coaches.ToListAsync();
-        }
-
-        public async Task UpdateSkillsAsync(Guid id, List<string> skills)
-        {
-            var coach = await _context.Coaches.FindAsync(id);
-            if (coach != null)
-            {
-                coach.ReplaceCompetences(skills);
-            }
         }
     }
 }

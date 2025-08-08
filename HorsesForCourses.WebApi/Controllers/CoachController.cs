@@ -11,16 +11,13 @@ public class CoachController : ControllerBase
 {
     private readonly InMemoryCoachRepository _repository;
     private readonly InMemoryCourseRepository _courseRepository;
-    private readonly InMemorySessionRepository _sessionRepository;
 
     public CoachController(
         InMemoryCoachRepository repository,
-        InMemoryCourseRepository courseRepository,
-        InMemorySessionRepository sessionRepository)
+        InMemoryCourseRepository courseRepository)
     {
         _repository = repository;
         _courseRepository = courseRepository;
-        _sessionRepository = sessionRepository;
     }
 
     [HttpPost]
@@ -52,7 +49,7 @@ public class CoachController : ControllerBase
         if (coach is null)
             return NotFound();
 
-        _repository.UpdateSkills(id, dto.Skills);
+        coach.ReplaceCompetences(dto.Skills);
         return Ok(ToDto(coach));
     }
 
@@ -75,21 +72,6 @@ public class CoachController : ControllerBase
         }
     }
 
-    [HttpGet("{id}/eligible-courses")]
-    public ActionResult<List<Course>> GetEligibleCourses(Guid id)
-    {
-        var coach = _repository.GetById(id);
-        if (coach is null)
-            return NotFound(new { message = "Coach not found" });
-
-        var eligibleCourses = _courseRepository
-            .GetConfirmed()
-            .Where(coach.CanTeach)
-            .ToList();
-
-        return Ok(eligibleCourses);
-    }
-
     [HttpPost("{id}/assign")]
     public IActionResult AssignSelfToCourse(Guid id, [FromBody] AssignCoachDto dto)
     {
@@ -107,40 +89,10 @@ public class CoachController : ControllerBase
         if (!coach.CanTeach(course))
             return BadRequest(new { message = "Coach does not meet the requirements" });
 
-        _courseRepository.AssignCoach(course.Id, coach);
+        course.AssignCoach(coach);
+        coach.AssignCourse(course);
+
         return Ok(course);
-    }
-
-    [HttpPost("{id}/sessions")]
-    public IActionResult ScheduleSession(Guid id, [FromBody] ScheduleSessionDto dto)
-    {
-        var coach = _repository.GetById(id);
-        if (coach is null)
-            return NotFound(new { message = "Coach not found" });
-
-        var course = _courseRepository.GetById(dto.CourseId);
-        if (course is null)
-            return NotFound(new { message = "Course not found" });
-
-        if (!coach.AssignedCourseIds.Contains(course.Id))
-            return BadRequest(new { message = "Coach is not assigned to this course" });
-
-        var slot = new Timeslot(dto.Day, dto.Start, dto.End);
-        var session = new Session(coach.Id, course.Id, slot);
-        _sessionRepository.Add(session);
-
-        return Ok(session);
-    }
-
-    [HttpGet("{id}/sessions")]
-    public IActionResult GetSessions(Guid id)
-    {
-        var coach = _repository.GetById(id);
-        if (coach is null)
-            return NotFound(new { message = "Coach not found" });
-
-        var sessions = _sessionRepository.GetByCoach(id);
-        return Ok(sessions);
     }
 
     private static CoachDto ToDto(Coach coach)

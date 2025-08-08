@@ -1,64 +1,25 @@
 using HorsesForCourses.Core;
 
-namespace HorsesForCourses.WebApi.Repositories;
 
-public class InMemoryCourseRepository
+namespace HorsesForCourses.WebApi.Repositories
 {
-    private readonly Dictionary<Guid, Course> _courses = new();
-    private readonly Dictionary<Guid, Coach> _coaches = new();
-    public void Add(Course course)
+    public class InMemoryCourseRepository
     {
-        _courses[course.Id] = course;
-    }
+        private readonly List<Course> _courses = new();
 
-    public void AddCoach(Coach coach)
-    {
-        _coaches[coach.Id] = coach;
-    }
-
-    public Course? GetById(Guid id)
-    {
-        return _courses.TryGetValue(id, out var course) ? course : null;
-    }
-
-    public Coach? GetCoachById(Guid id)
-    {
-        return _coaches.TryGetValue(id, out var coach) ? coach : null;
-    }
-
-    public List<Course> GetAll()
-    {
-        return _courses.Values.ToList();
-    }
-
-    public void UpdateSkills(Guid id, List<string> skills)
-    {
-        if (_courses.TryGetValue(id, out var course))
+        public void Add(Course course)
         {
-            course.ReplaceRequiredCompetences(skills);
+            _courses.Add(course);
         }
-    }
 
-    public void Confirm(Guid id)
-    {
-        if (_courses.TryGetValue(id, out var course))
+        public Course? GetById(Guid id)
         {
-            course.Confirm();
+            return _courses.FirstOrDefault(c => c.Id == id);
         }
-    }
 
-    public void AssignCoach(Guid courseId, Coach coach)
-    {
-        if (_courses.TryGetValue(courseId, out var course))
+        public List<Course> GetAll()
         {
-            course.AssignCoach(coach);
-            coach.AssignCourse(course);
+            return _courses;
         }
-    }
-    public List<Course> GetConfirmed()
-    {
-        return _courses.Values
-            .Where(c => c.Status == CourseStatus.PendingForCoach)
-            .ToList();
     }
 }
