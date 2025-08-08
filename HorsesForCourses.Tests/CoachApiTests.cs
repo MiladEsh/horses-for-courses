@@ -14,17 +14,14 @@ public class CoachApiTests
     [Fact]
     public async Task Should_Create_Coach()
     {
-        // Arrange
         var newCoach = new
         {
             name = "Milad Eshaghzey",
             email = "eshaghzey_milad@hotmail.com"
         };
 
-        // Act
         var response = await _client.PostAsJsonAsync("/coaches", newCoach);
 
-        // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
         var createdCoach = await response.Content.ReadFromJsonAsync<CoachDtoResponse>();
@@ -37,7 +34,6 @@ public class CoachApiTests
     [Fact]
     public async Task Should_Update_Coach_Skills()
     {
-        // Arrange: maak eerst een coach aan
         var newCoach = new
         {
             name = "Milad Eshaghzey",
@@ -48,7 +44,6 @@ public class CoachApiTests
         var createdCoach = await createResponse.Content.ReadFromJsonAsync<CoachDtoResponse>();
         Assert.NotNull(createdCoach);
 
-        // Act: skills toevoegen
         var skillsUpdate = new
         {
             skills = new List<string> { "C#", "ASP.NET Core" }
@@ -56,7 +51,6 @@ public class CoachApiTests
 
         var response = await _client.PostAsJsonAsync($"/coaches/{createdCoach!.Id}/skills", skillsUpdate);
 
-        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var updatedCoach = await response.Content.ReadFromJsonAsync<CoachDtoResponse>();

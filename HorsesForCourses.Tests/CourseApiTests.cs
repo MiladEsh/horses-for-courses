@@ -71,8 +71,8 @@ public class CourseApiTests
     {
         var newCoach = new
         {
-            name = "John Doe",
-            email = "john.doe@example.com"
+            name = "Milad Eshaghzey",
+            email = "eshaghzey_milad@hotmail.com"
         };
 
         var coachResponse = await _client.PostAsJsonAsync("/coaches", newCoach);
@@ -161,7 +161,7 @@ public class CourseApiTests
     [Fact]
     public async Task CoachCanAssignSelfToEligibleCourse()
     {
-        var coach = new { name = "Milad", email = "milad@example.com" };
+        var coach = new { name = "Milad", email = "eshaghzey_milad@hotmail.com" };
         var coachResp = await _client.PostAsJsonAsync("/coaches", coach);
         var createdCoach = await coachResp.Content.ReadFromJsonAsync<CoachResponse>();
 
