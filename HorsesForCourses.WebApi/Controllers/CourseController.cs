@@ -27,24 +27,39 @@ public class CourseController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public ActionResult<Course> GetById(Guid id)
+    public ActionResult<CourseDetailsDto> GetById(Guid id)
     {
         var course = _repository.GetById(id);
-        return course is null ? NotFound() : Ok(course);
+        if (course is null) return NotFound();
+
+        var dto = ToCourseDetailsDto(course);
+        return Ok(dto);
     }
 
     [HttpGet]
-    public ActionResult<List<Course>> GetAll()
+    public ActionResult<List<CourseListItemDto>> GetAll()
     {
-        return Ok(_repository.GetAll());
+        var list = _repository
+            .GetAll()
+            .Select(c => new CourseListItemDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                StartDate = c.StartDate,
+                EndDate = c.EndDate,
+                HasSchedule = c.Timeslots.Count > 0,
+                HasCoach = c.AssignedCoach != null
+            })
+            .ToList();
+
+        return Ok(list);
     }
 
     [HttpPost("{id}/confirm")]
     public IActionResult ConfirmCourse(Guid id)
     {
         var course = _repository.GetById(id);
-        if (course is null)
-            return NotFound();
+        if (course is null) return NotFound();
 
         try
         {
@@ -61,8 +76,7 @@ public class CourseController : ControllerBase
     public IActionResult AddTimeslot(Guid id, [FromBody] TimeslotDto dto)
     {
         var course = _repository.GetById(id);
-        if (course is null)
-            return NotFound();
+        if (course is null) return NotFound();
 
         try
         {
@@ -76,16 +90,17 @@ public class CourseController : ControllerBase
         }
     }
 
+
     [HttpPost("{id}/skills")]
     public IActionResult UpdateSkills(Guid id, [FromBody] UpdateCourseSkillsDto dto)
     {
         var course = _repository.GetById(id);
-        if (course is null)
-            return NotFound();
+        if (course is null) return NotFound();
 
         course.ReplaceRequiredCompetences(dto.Skills);
         return Ok(course);
     }
+
 
     [HttpPost("{id}/assign-coach")]
     public IActionResult AssignCoach(Guid id, [FromBody] AssignCoachDto dto)
@@ -109,4 +124,59 @@ public class CourseController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    private static CourseDetailsDto ToCourseDetailsDto(Course c)
+    {
+        return new CourseDetailsDto
+        {
+            Id = c.Id,
+            Name = c.Name,
+            StartDate = c.StartDate,
+            EndDate = c.EndDate,
+            Skills = c.RequiredCompetences.ToList(),
+            Timeslots = c.Timeslots.Select(ts => new TimeslotResponseDto
+            {
+                Day = ts.Day,
+                Start = ts.Start.Hour,
+                End = ts.End.Hour
+            }).ToList(),
+            Coach = c.AssignedCoach is null
+                ? null
+                : new SimpleCoachDto { Id = c.AssignedCoach.Id, Name = c.AssignedCoach.Name }
+        };
+    }
+}
+
+public class CourseListItemDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = default!;
+    public DateOnly StartDate { get; set; }
+    public DateOnly EndDate { get; set; }
+    public bool HasSchedule { get; set; }
+    public bool HasCoach { get; set; }
+}
+
+public class CourseDetailsDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = default!;
+    public DateOnly StartDate { get; set; }
+    public DateOnly EndDate { get; set; }
+    public List<string> Skills { get; set; } = new();
+    public List<TimeslotResponseDto> Timeslots { get; set; } = new();
+    public SimpleCoachDto? Coach { get; set; }
+}
+
+public class TimeslotResponseDto
+{
+    public Weekday Day { get; set; }
+    public int Start { get; set; }
+    public int End { get; set; }
+}
+
+public class SimpleCoachDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = default!;
 }
