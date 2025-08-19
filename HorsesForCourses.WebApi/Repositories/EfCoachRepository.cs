@@ -13,20 +13,24 @@ namespace HorsesForCourses.WebApi.Repositories
             _context = context;
         }
 
-        public async Task AddAsync(Coach coach)
+        public async Task AddAsync(Coach coach, CancellationToken ct = default)
         {
             _context.Coaches.Add(coach);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(ct);
         }
 
-        public async Task<Coach?> GetByIdAsync(Guid id)
+        public async Task<Coach?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
-            return await _context.Coaches.FindAsync(id);
+            return await _context.Coaches
+                .AsNoTracking()
+                .SingleOrDefaultAsync(c => c.Id == id, ct);
         }
 
-        public async Task<List<Coach>> GetAllAsync()
+        public async Task<List<Coach>> GetAllAsync(CancellationToken ct = default)
         {
-            return await _context.Coaches.ToListAsync();
+            return await _context.Coaches
+                .AsNoTracking()
+                .ToListAsync(ct);
         }
     }
 }

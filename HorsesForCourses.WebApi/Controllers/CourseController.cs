@@ -27,39 +27,37 @@ public class CourseController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public ActionResult<CourseDetailsDto> GetById(Guid id)
+    public ActionResult<Course> GetById(Guid id)
     {
         var course = _repository.GetById(id);
-        if (course is null) return NotFound();
-
-        var dto = ToCourseDetailsDto(course);
-        return Ok(dto);
+        return course is null ? NotFound() : Ok(course);
     }
 
     [HttpGet]
-    public ActionResult<List<CourseListItemDto>> GetAll()
+    public ActionResult<PagedResult<CourseListItemDto>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var list = _repository
-            .GetAll()
-            .Select(c => new CourseListItemDto
+        var (items, total) = _repository.GetPaged(
+            page, pageSize,
+            c => new CourseListItemDto
             {
                 Id = c.Id,
                 Name = c.Name,
                 StartDate = c.StartDate,
                 EndDate = c.EndDate,
                 HasSchedule = c.Timeslots.Count > 0,
-                HasCoach = c.AssignedCoach != null
-            })
-            .ToList();
+                HasCoach = c.AssignedCoach is not null
+            },
+            orderBy: q => q.OrderBy(c => c.Name).ThenBy(c => c.Id));
 
-        return Ok(list);
+        return Ok(new PagedResult<CourseListItemDto>(items, total, page, pageSize));
     }
 
     [HttpPost("{id}/confirm")]
     public IActionResult ConfirmCourse(Guid id)
     {
         var course = _repository.GetById(id);
-        if (course is null) return NotFound();
+        if (course is null)
+            return NotFound();
 
         try
         {
@@ -76,7 +74,8 @@ public class CourseController : ControllerBase
     public IActionResult AddTimeslot(Guid id, [FromBody] TimeslotDto dto)
     {
         var course = _repository.GetById(id);
-        if (course is null) return NotFound();
+        if (course is null)
+            return NotFound();
 
         try
         {
@@ -90,17 +89,16 @@ public class CourseController : ControllerBase
         }
     }
 
-
     [HttpPost("{id}/skills")]
     public IActionResult UpdateSkills(Guid id, [FromBody] UpdateCourseSkillsDto dto)
     {
         var course = _repository.GetById(id);
-        if (course is null) return NotFound();
+        if (course is null)
+            return NotFound();
 
         course.ReplaceRequiredCompetences(dto.Skills);
         return Ok(course);
     }
-
 
     [HttpPost("{id}/assign-coach")]
     public IActionResult AssignCoach(Guid id, [FromBody] AssignCoachDto dto)
@@ -125,58 +123,13 @@ public class CourseController : ControllerBase
         }
     }
 
-    private static CourseDetailsDto ToCourseDetailsDto(Course c)
+    public class CourseListItemDto
     {
-        return new CourseDetailsDto
-        {
-            Id = c.Id,
-            Name = c.Name,
-            StartDate = c.StartDate,
-            EndDate = c.EndDate,
-            Skills = c.RequiredCompetences.ToList(),
-            Timeslots = c.Timeslots.Select(ts => new TimeslotResponseDto
-            {
-                Day = ts.Day,
-                Start = ts.Start.Hour,
-                End = ts.End.Hour
-            }).ToList(),
-            Coach = c.AssignedCoach is null
-                ? null
-                : new SimpleCoachDto { Id = c.AssignedCoach.Id, Name = c.AssignedCoach.Name }
-        };
+        public Guid Id { get; set; }
+        public string Name { get; set; } = default!;
+        public DateOnly StartDate { get; set; }
+        public DateOnly EndDate { get; set; }
+        public bool HasSchedule { get; set; }
+        public bool HasCoach { get; set; }
     }
-}
-
-public class CourseListItemDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = default!;
-    public DateOnly StartDate { get; set; }
-    public DateOnly EndDate { get; set; }
-    public bool HasSchedule { get; set; }
-    public bool HasCoach { get; set; }
-}
-
-public class CourseDetailsDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = default!;
-    public DateOnly StartDate { get; set; }
-    public DateOnly EndDate { get; set; }
-    public List<string> Skills { get; set; } = new();
-    public List<TimeslotResponseDto> Timeslots { get; set; } = new();
-    public SimpleCoachDto? Coach { get; set; }
-}
-
-public class TimeslotResponseDto
-{
-    public Weekday Day { get; set; }
-    public int Start { get; set; }
-    public int End { get; set; }
-}
-
-public class SimpleCoachDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = default!;
 }

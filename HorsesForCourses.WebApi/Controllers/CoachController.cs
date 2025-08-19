@@ -25,57 +25,56 @@ public class CoachController : ControllerBase
     {
         var coach = new Coach(dto.Name, dto.Email);
         _repository.Add(coach);
-        return CreatedAtAction(nameof(GetById), new { id = coach.Id }, ToCoachDto(coach));
+        return CreatedAtAction(nameof(GetById), new { id = coach.Id }, ToDto(coach));
     }
 
     [HttpGet("{id}")]
-    public ActionResult<CoachDetailsDto> GetById(Guid id)
+    public ActionResult<CoachDto> GetById(Guid id)
     {
         var coach = _repository.GetById(id);
-        if (coach is null) return NotFound();
-
-        var details = ToCoachDetails(coach, _courseRepository);
-        return Ok(details);
+        return coach is null ? NotFound() : Ok(ToDto(coach));
     }
 
     [HttpGet]
-    public ActionResult<List<CoachListItemDto>> GetAll()
+    public ActionResult<PagedResult<CoachListItemDto>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var list = _repository
-            .GetAll()
-            .Select(c => new CoachListItemDto
+        var (items, total) = _repository.GetPaged(
+            page, pageSize,
+            c => new CoachListItemDto
             {
                 Id = c.Id,
                 Name = c.Name,
                 Email = c.Email,
                 NumberOfCoursesAssignedTo = c.AssignedCourseIds.Count
-            })
-            .ToList();
+            },
+            orderBy: q => q.OrderBy(c => c.Name).ThenBy(c => c.Id));
 
-        return Ok(list);
+        return Ok(new PagedResult<CoachListItemDto>(items, total, page, pageSize));
     }
 
     [HttpPost("{id}/skills")]
     public IActionResult UpdateSkills(Guid id, [FromBody] UpdateCoachSkillsDto dto)
     {
         var coach = _repository.GetById(id);
-        if (coach is null) return NotFound();
+        if (coach is null)
+            return NotFound();
 
         coach.ReplaceCompetences(dto.Skills);
-        return Ok(ToCoachDto(coach));
+        return Ok(ToDto(coach));
     }
 
     [HttpPost("{id}/availability")]
     public IActionResult AddAvailability(Guid id, [FromBody] TimeslotDto dto)
     {
         var coach = _repository.GetById(id);
-        if (coach is null) return NotFound();
+        if (coach is null)
+            return NotFound();
 
         try
         {
             var slot = new Timeslot(dto.Day, dto.Start, dto.End);
             coach.AddAvailability(slot);
-            return Ok(ToCoachDto(coach));
+            return Ok(ToDto(coach));
         }
         catch (InvalidOperationException ex)
         {
@@ -106,52 +105,22 @@ public class CoachController : ControllerBase
         return Ok(course);
     }
 
-    private static CoachDto ToCoachDto(Coach coach) => new CoachDto
+    public class CoachListItemDto
     {
-        Id = coach.Id,
-        Name = coach.Name,
-        Email = coach.Email,
-        Competences = coach.Competences.ToList()
-    };
+        public Guid Id { get; set; }
+        public string Name { get; set; } = default!;
+        public string Email { get; set; } = default!;
+        public int NumberOfCoursesAssignedTo { get; set; }
+    }
 
-    private static CoachDetailsDto ToCoachDetails(Coach coach, InMemoryCourseRepository courseRepo)
+    private static CoachDto ToDto(Coach coach)
     {
-        var courses = coach.AssignedCourseIds
-            .Select(cid => courseRepo.GetById(cid))
-            .Where(c => c != null)
-            .Select(c => new CoachCourseRefDto { Id = c!.Id, Name = c!.Name })
-            .ToList();
-
-        return new CoachDetailsDto
+        return new CoachDto
         {
             Id = coach.Id,
             Name = coach.Name,
             Email = coach.Email,
-            Skills = coach.Competences.ToList(),
-            Courses = courses
+            Competences = coach.Competences.ToList()
         };
     }
-}
-
-public class CoachListItemDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = default!;
-    public string Email { get; set; } = default!;
-    public int NumberOfCoursesAssignedTo { get; set; }
-}
-
-public class CoachDetailsDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = default!;
-    public string Email { get; set; } = default!;
-    public List<string> Skills { get; set; } = new();
-    public List<CoachCourseRefDto> Courses { get; set; } = new();
-}
-
-public class CoachCourseRefDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = default!;
 }
